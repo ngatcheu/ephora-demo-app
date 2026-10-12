@@ -1,0 +1,19 @@
+# PreviewEnvironment for one Pull Request. ${...} are filled by the CI
+# (envsubst) — see .github/workflows/preview.yml.
+apiVersion: ephora.io/v1alpha1
+kind: PreviewEnvironment
+metadata:
+  name: pr-${PR_NUMBER}-demo-app
+  namespace: ${PREVIEW_MGMT_NAMESPACE}
+spec:
+  source:
+    repo: "https://github.com/ngatcheu/ephora-demo-app"
+    chartPath: "charts/app"
+    revision: "${REVISION}"
+  prNumber: ${PR_NUMBER}
+  appName: demo-app
+  ttl: 48h
+  valuesOverride:
+    preview:
+      prNumber: "${PR_NUMBER}"
+      revision: "${REVISION}"

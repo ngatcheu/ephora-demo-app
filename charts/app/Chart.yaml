@@ -1,0 +1,6 @@
+apiVersion: v2
+name: ephora-demo-app
+description: Demo application deployed per Pull Request by ephora-operator
+type: application
+version: 0.1.0
+appVersion: "1.0.0"

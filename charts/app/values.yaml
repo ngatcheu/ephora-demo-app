@@ -1,0 +1,24 @@
+# Unprivileged nginx (non-root, listens on 8080): compatible with the
+# "restricted" Pod Security level (e.g. RKE2 CIS profile).
+image:
+  repository: nginxinc/nginx-unprivileged
+  tag: "1.27-alpine"
+  pullPolicy: IfNotPresent
+
+replicaCount: 1
+
+# Filled by the CI through spec.valuesOverride (preview-template.yaml).
+preview:
+  prNumber: "local"
+  revision: "dev"
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 32Mi
+  limits:
+    cpu: 200m
+    memory: 64Mi
+
+service:
+  port: 80

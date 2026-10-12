@@ -1,0 +1,46 @@
+name: Preview environment
+
+# Creates / updates / deletes the preview environment of each Pull Request
+# through ephora-operator (docs/onboarding.md of ephora-operator).
+#
+# Requires the PREVIEW_KUBECONFIG secret (CI account limited to
+# PreviewEnvironment objects). Without it, the job is skipped: a GitHub-hosted
+# runner cannot reach a local kind cluster anyway.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, closed]
+
+permissions:
+  contents: read
+
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    env:
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      REVISION: ${{ github.event.pull_request.head.sha }}
+      PREVIEW_MGMT_NAMESPACE: ephora-previews
+      KUBECONFIG: ${{ github.workspace }}/kubeconfig
+      HAS_KUBECONFIG: ${{ secrets.PREVIEW_KUBECONFIG != '' }}
+    steps:
+      - name: Skip without cluster access
+        if: env.HAS_KUBECONFIG != 'true'
+        run: echo "::notice::PREVIEW_KUBECONFIG not configured, preview skipped."
+
+      - uses: actions/checkout@v7
+        if: env.HAS_KUBECONFIG == 'true'
+
+      - name: Kubeconfig
+        if: env.HAS_KUBECONFIG == 'true'
+        run: echo "${{ secrets.PREVIEW_KUBECONFIG }}" > "$KUBECONFIG"
+
+      - name: Create / update the environment
+        if: env.HAS_KUBECONFIG == 'true' && github.event.action != 'closed'
+        run: envsubst < preview-template.yaml | kubectl apply -f -
+
+      - name: Delete the environment
+        if: env.HAS_KUBECONFIG == 'true' && github.event.action == 'closed'
+        run: |
+          kubectl delete previewenvironment "pr-${PR_NUMBER}-demo-app" \
+            -n "$PREVIEW_MGMT_NAMESPACE" --ignore-not-found
